@@ -1,0 +1,241 @@
+import { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Download, ArrowLeft, Palette } from 'lucide-react';
+import type { Photo, FilterType, LayoutType, FrameColor } from '../types';
+import { applyFilter } from '../utils/filters';
+
+export const CustomizePage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const photos = (location.state?.photos as Photo[]) || [];
+  const layout = (location.state?.layout as LayoutType) || 'horizontal-2x2';
+  const filter = (location.state?.filter as FilterType) || 'none';
+
+  const [frameColor, setFrameColor] = useState<FrameColor>('white');
+  const [customColor, setCustomColor] = useState('#ffffff');
+
+  const frameColors: { value: FrameColor; label: string; color: string }[] = [
+    { value: 'white', label: 'White', color: '#ffffff' },
+    { value: 'black', label: 'Black', color: '#000000' },
+    { value: 'pink', label: 'Pink', color: '#ffc0cb' },
+    { value: 'green', label: 'Green', color: '#90ee90' },
+    { value: 'blue', label: 'Blue', color: '#87ceeb' },
+    { value: 'yellow', label: 'Yellow', color: '#ffeb3b' },
+    { value: 'purple', label: 'Purple', color: '#da70d6' },
+    { value: 'maroon', label: 'Maroon', color: '#800000' },
+    { value: 'burgundy', label: 'Burgundy', color: '#8b0032' },
+  ];
+
+  useEffect(() => {
+    if (photos.length === 0) {
+      navigate('/layout');
+      return;
+    }
+
+    renderPhotoStrip();
+  }, [photos, frameColor, customColor, filter, layout]);
+
+  const renderPhotoStrip = async () => {
+    if (!canvasRef.current || photos.length === 0) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Fixed canvas size: 1200x1800
+    canvas.width = 1200;
+    canvas.height = 1800;
+
+    // Get frame color
+    const selectedFrameColor = frameColor === 'custom' ? customColor : 
+      frameColors.find(f => f.value === frameColor)?.color || '#ffffff';
+
+    // Draw frame background
+    ctx.fillStyle = selectedFrameColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Calculate photo dimensions based on layout
+    const frameThickness = 60;
+    let photoWidth: number, photoHeight: number, photosToRender: number;
+if (layout === 'horizontal-2x2') {
+  photoWidth = 1200 - frameThickness * 2;
+  photoHeight = (1800 - frameThickness * 4) / 3;
+  photosToRender = Math.min(photos.length, 3);
+} else if (layout === 'vertical-4') {
+  photoWidth = 1200 - frameThickness * 2;
+  photoHeight = (1800 - frameThickness * 5) / 4;
+  photosToRender = Math.min(photos.length, 4);
+} else if (layout === 'grid-2x3') {
+  photoWidth = (1200 - frameThickness * 4) / 3;
+  photoHeight = (1800 - frameThickness * 3) / 2;
+  photosToRender = Math.min(photos.length, 6);
+} else {
+  photoWidth = 1200 - frameThickness * 2;
+  photoHeight = 1800 - frameThickness * 2;
+  photosToRender = Math.min(photos.length, 1);
+}
+
+    // Process all photos with Promise.all to ensure all are rendered
+    const photoPromises = photos.slice(0, photosToRender).map((photo, index) => {
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = photoWidth;
+          tempCanvas.height = photoHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          
+          if (!tempCtx) {
+            resolve();
+            return;
+          }
+
+          // Draw image and maintain aspect ratio
+          tempCtx.drawImage(img, 0, 0, photoWidth, photoHeight);
+          
+          // Apply filter if needed
+          if (filter !== 'none') {
+            const imageData = tempCtx.getImageData(0, 0, photoWidth, photoHeight);
+            const filtered = applyFilter(imageData, filter);
+            tempCtx.putImageData(filtered, 0, 0);
+          }
+
+          let x = frameThickness;
+          let y = frameThickness;
+
+         if (layout === 'horizontal-2x2') {
+  y = frameThickness + index * (photoHeight + frameThickness);
+} else if (layout === 'vertical-4') {
+  y = frameThickness + index * (photoHeight + frameThickness);
+} else if (layout === 'grid-2x3') {
+  x = frameThickness + (index % 3) * (photoWidth + frameThickness);
+  y = frameThickness + Math.floor(index / 3) * (photoHeight + frameThickness);
+}
+          ctx.drawImage(tempCanvas, x, y, photoWidth, photoHeight);
+          
+          resolve();
+        };
+        
+        img.onerror = () => {
+          console.error('Failed to load image:', index);
+          resolve();
+        };
+        
+        img.src = photo.dataUrl;
+      });
+    });
+
+    // Wait for all photos to be rendered
+    await Promise.all(photoPromises);
+  };
+
+  const downloadPhotoStrip = () => {
+    if (!canvasRef.current) return;
+    
+    const link = document.createElement('a');
+    link.download = `poto-${Date.now()}.jpg`;
+    link.href = canvasRef.current.toDataURL('image/jpeg', 0.95);
+    link.click();
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
+            Photo Strip Preview
+          </h1>
+          <p className="text-gray-400">
+            Layout: {layout === 'horizontal-2x2' ? 'Layout B (3 photos)' : 
+                     layout === 'vertical-4' ? 'Layout A (4 photos)' : 
+                     'Layout C (1 photo)'} • Photos captured: {photos.length}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Preview Canvas */}
+          <div className="lg:col-span-2 bg-gradient-to-br from-pink-200 to-purple-200 p-8 rounded-2xl flex items-center justify-center">
+            <div className="bg-white p-4 rounded-xl inline-block">
+              <canvas
+                ref={canvasRef}
+                className="shadow-2xl"
+                style={{ maxWidth: '100%', height: 'auto', maxHeight: '70vh' }}
+              />
+            </div>
+          </div>
+
+          {/* Customization Panel */}
+          <div className="space-y-6">
+            {/* Frame Color Selection */}
+            <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 border border-gray-700/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Palette className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">Frame colour</h3>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {frameColors.map((frame) => (
+                  <button
+                    key={frame.value}
+                    onClick={() => setFrameColor(frame.value)}
+                    className={`px-4 py-3 rounded-lg font-semibold transition-all duration-300 border-2 ${
+                      frameColor === frame.value
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 scale-105'
+                        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border-gray-600/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border border-gray-500" 
+                        style={{ backgroundColor: frame.color }}
+                      />
+                      <span className="text-sm">{frame.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom Color */}
+              <div className="mt-4">
+                <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
+                  Custom:
+                  <input
+                    type="color"
+                    value={customColor}
+                    onChange={(e) => {
+                      setCustomColor(e.target.value);
+                      setFrameColor('custom');
+                    }}
+                    className="w-12 h-8 rounded cursor-pointer bg-gray-700 border border-gray-600"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={downloadPhotoStrip}
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:scale-105"
+              >
+                <Download className="w-5 h-5" />
+                Download Photo Strip
+              </button>
+
+              <button
+                onClick={() => navigate('/booth', { state: { layout } })}
+                className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-600/50"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                Take New Photos
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
