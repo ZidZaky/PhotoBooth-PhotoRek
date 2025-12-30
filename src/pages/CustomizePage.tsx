@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Download, ArrowLeft, Palette } from 'lucide-react';
 import type { Photo, FilterType, LayoutType, FrameColor } from '../types';
 import { applyFilter } from '../utils/filters';
+import { FilterPanel } from '../components/FilterPanel';
 
 export const CustomizePage = () => {
   const location = useLocation();
@@ -11,8 +12,9 @@ export const CustomizePage = () => {
 
   const photos = (location.state?.photos as Photo[]) || [];
   const layout = (location.state?.layout as LayoutType) || 'horizontal-2x2';
-  const filter = (location.state?.filter as FilterType) || 'none';
+  const initialFilter = (location.state?.filter as FilterType) || 'none';
 
+  const [currentFilter, setCurrentFilter] = useState<FilterType>(initialFilter);
   const [frameColor, setFrameColor] = useState<FrameColor>('white');
   const [customColor, setCustomColor] = useState('#ffffff');
 
@@ -35,7 +37,7 @@ export const CustomizePage = () => {
     }
 
     renderPhotoStrip();
-  }, [photos, frameColor, customColor, filter, layout]);
+  }, [photos, frameColor, customColor, currentFilter, layout]);
 
   const renderPhotoStrip = async () => {
     if (!canvasRef.current || photos.length === 0) return;
@@ -59,23 +61,23 @@ export const CustomizePage = () => {
     // Calculate photo dimensions based on layout
     const frameThickness = 60;
     let photoWidth: number, photoHeight: number, photosToRender: number;
-if (layout === 'horizontal-2x2') {
-  photoWidth = 1200 - frameThickness * 2;
-  photoHeight = (1800 - frameThickness * 4) / 3;
-  photosToRender = Math.min(photos.length, 3);
-} else if (layout === 'vertical-4') {
-  photoWidth = 1200 - frameThickness * 2;
-  photoHeight = (1800 - frameThickness * 5) / 4;
-  photosToRender = Math.min(photos.length, 4);
-} else if (layout === 'grid-2x3') {
-  photoWidth = (1200 - frameThickness * 4) / 3;
-  photoHeight = (1800 - frameThickness * 3) / 2;
-  photosToRender = Math.min(photos.length, 6);
-} else {
-  photoWidth = 1200 - frameThickness * 2;
-  photoHeight = 1800 - frameThickness * 2;
-  photosToRender = Math.min(photos.length, 1);
-}
+    if (layout === 'horizontal-2x2') {
+      photoWidth = (1200 - frameThickness * 3) / 2;
+      photoHeight = (1800 - frameThickness * 3) / 2;
+      photosToRender = Math.min(photos.length, 4);
+    } else if (layout === 'vertical-4') {
+      photoWidth = 1200 - frameThickness * 2;
+      photoHeight = (1800 - frameThickness * 5) / 4;
+      photosToRender = Math.min(photos.length, 4);
+    } else if (layout === 'grid-2x3') {
+      photoWidth = (1200 - frameThickness * 4) / 3;
+      photoHeight = (1800 - frameThickness * 3) / 2;
+      photosToRender = Math.min(photos.length, 6);
+    } else {
+      photoWidth = 1200 - frameThickness * 2;
+      photoHeight = 1800 - frameThickness * 2;
+      photosToRender = Math.min(photos.length, 1);
+    }
 
     // Process all photos with Promise.all to ensure all are rendered
     const photoPromises = photos.slice(0, photosToRender).map((photo, index) => {
@@ -93,26 +95,41 @@ if (layout === 'horizontal-2x2') {
           }
 
           // Draw image and maintain aspect ratio
-          tempCtx.drawImage(img, 0, 0, photoWidth, photoHeight);
-          
+          const aspectRatio = img.width / img.height;
+          let drawWidth = photoWidth;
+          let drawHeight = photoHeight;
+
+          if (photoWidth / photoHeight > aspectRatio) {
+            drawWidth = photoHeight * aspectRatio;
+          } else {
+            drawHeight = photoWidth / aspectRatio;
+          }
+
+          const dx = (photoWidth - drawWidth) / 2;
+          const dy = (photoHeight - drawHeight) / 2;
+
+          tempCtx.clearRect(0, 0, photoWidth, photoHeight);
+          tempCtx.drawImage(img, dx, dy, drawWidth, drawHeight);          
           // Apply filter if needed
-          if (filter !== 'none') {
+          if (currentFilter !== "none") {
             const imageData = tempCtx.getImageData(0, 0, photoWidth, photoHeight);
-            const filtered = applyFilter(imageData, filter);
+            const filtered = applyFilter(imageData, currentFilter);
             tempCtx.putImageData(filtered, 0, 0);
           }
 
           let x = frameThickness;
           let y = frameThickness;
 
-         if (layout === 'horizontal-2x2') {
-  y = frameThickness + index * (photoHeight + frameThickness);
-} else if (layout === 'vertical-4') {
-  y = frameThickness + index * (photoHeight + frameThickness);
-} else if (layout === 'grid-2x3') {
-  x = frameThickness + (index % 3) * (photoWidth + frameThickness);
-  y = frameThickness + Math.floor(index / 3) * (photoHeight + frameThickness);
-}
+          if (layout === 'grid-2x3') {
+            x = frameThickness + (index % 3) * (photoWidth + frameThickness);
+            y = frameThickness + Math.floor(index / 3) * (photoHeight + frameThickness);
+          } else if (layout === 'horizontal-2x2') {
+            x = frameThickness + (index % 2) * (photoWidth + frameThickness);
+            y = frameThickness + Math.floor(index / 2) * (photoHeight + frameThickness);
+          } else if (layout === 'vertical-4') {
+            y = frameThickness + index * (photoHeight + frameThickness);
+          }
+
           ctx.drawImage(tempCanvas, x, y, photoWidth, photoHeight);
           
           resolve();
@@ -149,8 +166,9 @@ if (layout === 'horizontal-2x2') {
             Photo Strip Preview
           </h1>
           <p className="text-gray-400">
-            Layout: {layout === 'horizontal-2x2' ? 'Layout B (3 photos)' : 
+            Layout: {layout === 'horizontal-2x2' ? 'Layout B (4 photos)' : 
                      layout === 'vertical-4' ? 'Layout A (4 photos)' : 
+                     layout === 'grid-2x3' ? 'Layout D (6 photos)' : 
                      'Layout C (1 photo)'} • Photos captured: {photos.length}
           </p>
         </div>
@@ -169,6 +187,14 @@ if (layout === 'horizontal-2x2') {
 
           {/* Customization Panel */}
           <div className="space-y-6">
+            {/* Filter Panel */}
+            <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 border border-gray-700/50">
+              <FilterPanel
+                currentFilter={currentFilter}
+                onFilterChange={setCurrentFilter}
+              />
+            </div>
+
             {/* Frame Color Selection */}
             <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 border border-gray-700/50">
               <div className="flex items-center gap-2 mb-4">

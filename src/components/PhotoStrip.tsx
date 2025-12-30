@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import type { Photo, FilterType, LayoutType } from '../types';
-import { applyFilter } from '../utils/filters';
-import { Download, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import type { Photo, FilterType, LayoutType } from "../types";
+import { applyFilter } from "../utils/filters";
+import { Download, Image as ImageIcon, Loader2 } from "lucide-react";
 
 interface PhotoStripProps {
   photos: Photo[];
@@ -12,13 +12,13 @@ interface PhotoStripProps {
 export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(false);
-  const [renderError, setRenderError] = useState<string>('');
+  const [renderError, setRenderError] = useState<string>("");
 
   useEffect(() => {
     if (photos.length === 0 || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const photoWidth = 300;
@@ -26,13 +26,13 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
     const padding = 20;
 
     // Set canvas size based on layout
-    if (layout === 'vertical-4') {
+    if (layout === "vertical-4") {
       canvas.width = photoWidth + padding * 2;
       canvas.height = photoHeight * 4 + padding * 5;
-    } else if (layout === 'horizontal-2x2') {
+    } else if (layout === "horizontal-2x2") {
       canvas.width = photoWidth + padding * 2;
       canvas.height = photoHeight * 3 + padding * 4;
-    } else if (layout === 'grid-2x3') {
+    } else if (layout === "grid-2x3") {
       canvas.width = photoWidth * 3 + padding * 4;
       canvas.height = photoHeight * 2 + padding * 3;
     } else {
@@ -41,25 +41,28 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
     }
 
     // Dark background
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = "#111111";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const maxPhotos = 
-      layout === 'single' ? 1 : 
-      layout === 'horizontal-2x2' ? 3 : 
-      layout === 'grid-2x3' ? 6 :
-      4;
+    const maxPhotos =
+      layout === "single"
+        ? 1
+        : layout === "horizontal-2x2"
+        ? 3
+        : layout === "grid-2x3"
+        ? 6
+        : 4;
 
     // Use Promise.all to wait for all images to load
     const renderPhotos = async () => {
       setIsRendering(true);
-      setRenderError('');
+      setRenderError("");
 
       try {
         const photoPromises = photos.slice(0, maxPhotos).map((photo, index) => {
           return new Promise<void>((resolve, reject) => {
             const img = new Image();
-            
+
             // Set timeout for image loading (5 seconds)
             const timeout = setTimeout(() => {
               reject(new Error(`Timeout loading image ${index + 1}`));
@@ -67,22 +70,41 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
 
             img.onload = () => {
               clearTimeout(timeout);
-              
+
               try {
-                const tempCanvas = document.createElement('canvas');
+                const tempCanvas = document.createElement("canvas");
                 tempCanvas.width = photoWidth;
                 tempCanvas.height = photoHeight;
-                const tempCtx = tempCanvas.getContext('2d');
-                
+                const tempCtx = tempCanvas.getContext("2d");
+
                 if (!tempCtx) {
-                  reject(new Error('Failed to get canvas context'));
+                  reject(new Error("Failed to get canvas context"));
                   return;
                 }
 
-                tempCtx.drawImage(img, 0, 0, photoWidth, photoHeight);
-                
-                if (filter !== 'none') {
-                  const imageData = tempCtx.getImageData(0, 0, photoWidth, photoHeight);
+                const aspectRatio = img.width / img.height;
+                let drawWidth = photoWidth;
+                let drawHeight = photoHeight;
+
+                if (photoWidth / photoHeight > aspectRatio) {
+                  drawWidth = photoHeight * aspectRatio;
+                } else {
+                  drawHeight = photoWidth / aspectRatio;
+                }
+
+                const dx = (photoWidth - drawWidth) / 2;
+                const dy = (photoHeight - drawHeight) / 2;
+
+                tempCtx.clearRect(0, 0, photoWidth, photoHeight);
+                tempCtx.drawImage(img, dx, dy, drawWidth, drawHeight);
+
+                if (filter !== "none") {
+                  const imageData = tempCtx.getImageData(
+                    0,
+                    0,
+                    photoWidth,
+                    photoHeight
+                  );
                   const filtered = applyFilter(imageData, filter);
                   tempCtx.putImageData(filtered, 0, 0);
                 }
@@ -91,7 +113,7 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
                 let x = padding;
                 let y = padding;
 
-                if (layout === 'grid-2x3') {
+                if (layout === "grid-2x3") {
                   x = padding + (index % 3) * (photoWidth + padding);
                   y = padding + Math.floor(index / 3) * (photoHeight + padding);
                 } else {
@@ -99,23 +121,23 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
                 }
 
                 ctx.drawImage(tempCanvas, x, y);
-                
+
                 // Add border
-                ctx.strokeStyle = '#444444';
+                ctx.strokeStyle = "#444444";
                 ctx.lineWidth = 2;
                 ctx.strokeRect(x, y, photoWidth, photoHeight);
-                
+
                 resolve();
               } catch (error) {
                 reject(error);
               }
             };
-            
+
             img.onerror = () => {
               clearTimeout(timeout);
               reject(new Error(`Failed to load image ${index + 1}`));
             };
-            
+
             img.src = photo.dataUrl;
           });
         });
@@ -123,8 +145,10 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
         await Promise.all(photoPromises);
         setIsRendering(false);
       } catch (error) {
-        console.error('Error rendering photos:', error);
-        setRenderError(error instanceof Error ? error.message : 'Failed to render photos');
+        console.error("Error rendering photos:", error);
+        setRenderError(
+          error instanceof Error ? error.message : "Failed to render photos"
+        );
         setIsRendering(false);
       }
     };
@@ -134,19 +158,22 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
 
   const downloadPhotoStrip = () => {
     if (!canvasRef.current) return;
-    
-    const link = document.createElement('a');
+
+    const link = document.createElement("a");
     link.download = `poto-${Date.now()}.jpg`;
-    link.href = canvasRef.current.toDataURL('image/jpeg', 0.95);
+    link.href = canvasRef.current.toDataURL("image/jpeg", 0.95);
     link.click();
   };
 
   // Get max photos for current layout
-  const maxPhotos = 
-    layout === 'single' ? 1 : 
-    layout === 'horizontal-2x2' ? 3 : 
-    layout === 'grid-2x3' ? 6 :
-    4;
+  const maxPhotos =
+    layout === "single"
+      ? 1
+      : layout === "horizontal-2x2"
+      ? 4
+      : layout === "grid-2x3"
+      ? 6
+      : 4;
 
   if (photos.length === 0) {
     return (
@@ -157,7 +184,8 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
           </div>
           <p className="text-gray-300 font-semibold text-lg">No photos yet</p>
           <p className="text-gray-500 text-sm mt-2">
-            Start capturing to see your photo strip ({maxPhotos} {maxPhotos === 1 ? 'photo' : 'photos'})
+            Start capturing to see your photo strip ({maxPhotos}{" "}
+            {maxPhotos === 1 ? "photo" : "photos"})
           </p>
         </div>
       </div>
@@ -191,10 +219,12 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
         {renderError && (
           <div className="absolute inset-0 bg-red-900/20 backdrop-blur-sm rounded-xl flex items-center justify-center z-10 border-2 border-red-500/50">
             <div className="text-center px-6">
-              <p className="text-red-400 font-bold text-lg mb-2">⚠️ Rendering Error</p>
+              <p className="text-red-400 font-bold text-lg mb-2">
+                ⚠️ Rendering Error
+              </p>
               <p className="text-red-300 text-sm">{renderError}</p>
               <button
-                onClick={() => setRenderError('')}
+                onClick={() => setRenderError("")}
                 className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-semibold transition-all"
               >
                 Dismiss
@@ -203,19 +233,16 @@ export const PhotoStrip = ({ photos, filter, layout }: PhotoStripProps) => {
           </div>
         )}
 
-        <canvas
-          ref={canvasRef}
-          className="mx-auto rounded-lg shadow-2xl"
-        />
+        <canvas ref={canvasRef} className="mx-auto rounded-lg shadow-2xl" />
       </div>
-      
+
       <button
         onClick={downloadPhotoStrip}
         disabled={isRendering || !!renderError}
         className="group relative w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:scale-105 disabled:shadow-none disabled:cursor-not-allowed disabled:scale-100"
       >
         <Download className="w-5 h-5" />
-        <span>{isRendering ? 'Rendering...' : 'Download Photo Strip'}</span>
+        <span>{isRendering ? "Rendering..." : "Download Photo Strip"}</span>
         <div className="absolute inset-0 rounded-xl bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
       </button>
     </div>
