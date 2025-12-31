@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
-import { useCamera } from '../hooks/useCamera';
-import { Camera as CameraIcon, VideoOff } from 'lucide-react';
+import { useEffect } from "react";
+import { useCamera } from "../hooks/useCamera";
+import { Camera as CameraIcon, VideoOff } from "lucide-react";
 
 interface CameraProps {
   onCapture: (dataUrl: string) => void;
@@ -9,8 +9,14 @@ interface CameraProps {
   shouldStartCamera: boolean;
 }
 
-export const Camera = ({ onCapture, countdown, isCapturing, shouldStartCamera }: CameraProps) => {
-  const { videoRef, error, startCamera, stopCamera, capturePhoto } = useCamera();
+export const Camera = ({
+  onCapture,
+  countdown,
+  isCapturing,
+  shouldStartCamera,
+}: CameraProps) => {
+  const { videoRef, error, startCamera, stopCamera, capturePhoto } =
+    useCamera();
 
   useEffect(() => {
     if (shouldStartCamera) {
@@ -49,7 +55,9 @@ export const Camera = ({ onCapture, countdown, isCapturing, shouldStartCamera }:
       <div className="flex items-center justify-center h-[400px] md:h-[500px] bg-gradient-to-br from-red-900/20 to-gray-900 rounded-xl border-2 border-red-500/30">
         <div className="text-center px-4">
           <p className="text-red-400 font-semibold">{error}</p>
-          <p className="text-gray-500 text-sm mt-2">Please allow camera access in browser settings</p>
+          <p className="text-gray-500 text-sm mt-2">
+            Please allow camera access in browser settings
+          </p>
         </div>
       </div>
     );
@@ -63,10 +71,10 @@ export const Camera = ({ onCapture, countdown, isCapturing, shouldStartCamera }:
         playsInline
         className="w-full h-[400px] md:h-[500px] object-cover rounded-xl"
       />
-      
+
       {/* Countdown Overlay */}
       {isCapturing && countdown > 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm rounded-xl">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl">
           <div className="relative">
             <div className="text-9xl font-black text-white animate-ping opacity-20 absolute inset-0 flex items-center justify-center">
               {countdown}
