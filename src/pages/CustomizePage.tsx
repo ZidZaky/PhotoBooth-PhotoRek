@@ -40,18 +40,14 @@ export const CustomizePage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    // Fixed canvas size: 1200x1800
     canvas.width = 1200;
     canvas.height = 1800;
-    // Get frame color
     const selectedFrameColor =
       frameColor === "custom"
         ? customColor
         : frameColors.find((f) => f.value === frameColor)?.color || "#ffffff";
-    // Draw frame background
     ctx.fillStyle = selectedFrameColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // Calculate photo dimensions based on layout
     const frameThickness = 60;
     let photoWidth: number, photoHeight: number, photosToRender: number;
     if (layout === "horizontal-2x2") {
@@ -71,7 +67,6 @@ export const CustomizePage = () => {
       photoHeight = 1800 - frameThickness * 2;
       photosToRender = Math.min(photos.length, 1);
     }
-    // Process all photos with Promise.all to ensure all are rendered
     const photoPromises = photos
       .slice(0, photosToRender)
       .map((photo, index) => {
@@ -100,7 +95,6 @@ export const CustomizePage = () => {
             const dy = (photoHeight - drawHeight) / 2;
             tempCtx.drawImage(img, dx, dy, drawWidth, drawHeight);
 
-            // Apply filter if needed
             if (currentFilter !== "none") {
               const imageData = tempCtx.getImageData(
                 0,
@@ -139,7 +133,6 @@ export const CustomizePage = () => {
           img.src = photo.dataUrl;
         });
       });
-    // Wait for all photos to be rendered
     await Promise.all(photoPromises);
   };
 
@@ -153,14 +146,13 @@ export const CustomizePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
             Photo Strip Preview
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-500">
             Layout:{" "}
             {layout === "horizontal-2x2"
               ? "Layout B (4 photos)"
@@ -173,30 +165,25 @@ export const CustomizePage = () => {
           </p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Preview Canvas */}
-          <div className="lg:col-span-2 bg-gradient-to-br from-blue-200 to-purple-200 p-8 rounded-2xl flex items-center justify-center">
-            <div className="bg-white p-4 rounded-xl inline-block">
+          <div className="lg:col-span-2 bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl flex items-center justify-center shadow-sm">
+            <div className="bg-white p-4 rounded-xl shadow-md inline-block">
               <canvas
                 ref={canvasRef}
-                className="shadow-2xl"
                 style={{ maxWidth: "100%", height: "auto", maxHeight: "70vh" }}
               />
             </div>
           </div>
-          {/* Customization Panel */}
           <div className="space-y-6">
-            {/* Filter Panel */}
-            <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 border border-gray-700/50">
+            <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
               <FilterPanel
                 currentFilter={currentFilter}
                 onFilterChange={setCurrentFilter}
               />
             </div>
-            {/* Frame Color Selection */}
-            <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 border border-gray-700/50">
+            <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Palette className="w-5 h-5 text-cyan-400" />
-                <h3 className="text-lg font-bold text-white">Frame colour</h3>
+                <Palette className="w-5 h-5 text-blue-500" />
+                <h3 className="text-lg font-bold text-gray-900">Frame colour</h3>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-4">
@@ -206,13 +193,13 @@ export const CustomizePage = () => {
                     onClick={() => setFrameColor(frame.value)}
                     className={`px-4 py-3 rounded-lg font-semibold transition-all duration-300 border-2 ${
                       frameColor === frame.value
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-cyan-400 scale-105"
-                        : "bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border-gray-600/50"
+                        ? "bg-gradient-to-r from-blue-100 to-blue-300 text-white border-blue-200"
+                        : "bg-blue-50 text-gray-600 hover:bg-blue-100 border-blue-100"
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-4 h-4 rounded-full border border-gray-500"
+                        className="w-4 h-4 rounded-full border border-gray-300"
                         style={{ backgroundColor: frame.color }}
                       />
                       <span className="text-sm">{frame.label}</span>
@@ -220,9 +207,8 @@ export const CustomizePage = () => {
                   </button>
                 ))}
               </div>
-              {/* Custom Color */}
               <div className="mt-4">
-                <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
+                <label className="flex items-center gap-2 text-sm text-gray-500 mb-2">
                   Custom:
                   <input
                     type="color"
@@ -231,23 +217,22 @@ export const CustomizePage = () => {
                       setCustomColor(e.target.value);
                       setFrameColor("custom");
                     }}
-                    className="w-12 h-8 rounded cursor-pointer bg-gray-700 border border-gray-600"
+                    className="w-12 h-8 rounded cursor-pointer bg-blue-50 border border-blue-100"
                   />
                 </label>
               </div>
             </div>
-            {/* Action Buttons */}
             <div className="space-y-3">
               <button
                 onClick={downloadPhotoStrip}
-                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:scale-105"
+                className="w-full bg-gradient-to-r from-blue-100 to-blue-300 hover:from-blue-50 hover:to-blue-200 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md"
               >
                 <Download className="w-5 h-5" />
                 Download Photo Strip
               </button>
               <button
                 onClick={() => navigate("/booth", { state: { layout } })}
-                className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-gray-600/50"
+                className="w-full bg-white hover:bg-blue-50 text-gray-900 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border border-blue-100 shadow-sm"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Take New Photos

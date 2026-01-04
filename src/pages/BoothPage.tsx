@@ -19,7 +19,7 @@ export const BoothPage = () => {
   const [currentLayout] = useState<LayoutType>(initialLayout);
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [cameraStarted, setCameraStarted] = useState(true); // Auto-start camera
+  const [cameraStarted, setCameraStarted] = useState(true);
 
   const maxPhotos =
     currentLayout === "single"
@@ -72,11 +72,9 @@ export const BoothPage = () => {
     return "1 photo";
   };
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900">
-      {/* Top Bar - Centered layout text */}
-      <div className="bg-gray-900/80 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-gray-700/50">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
+      <div className="bg-white sticky top-0 z-50 border-b border-blue-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-14 relative flex items-center">
-          {/* Left: Logo */}
           <div className="flex items-center">
             <div className="h-14 flex items-center overflow-visible">
               <img
@@ -86,9 +84,8 @@ export const BoothPage = () => {
               />
             </div>
           </div>
-          {/* Center: Selected layout */}
           <div className="absolute left-1/2 -translate-x-1/2 px-2">
-            <p className="text-xs font-medium text-gray-300 text-center whitespace-nowrap">
+            <p className="text-xs font-medium text-gray-500 text-center whitespace-nowrap">
               Selected:{" "}
               {currentLayout === "horizontal-2x2"
                 ? "Layout B"
@@ -98,12 +95,10 @@ export const BoothPage = () => {
               ({getLayoutDescription()})
             </p>
           </div>
-          {/* Right: Home */}
           <div className="ml-auto">
             <button
               onClick={() => navigate("/")}
-              className="flex items-center gap-2 bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-semibold
-               hover:bg-gray-700 transition border border-gray-600/50"
+              className="flex items-center gap-2 bg-white text-gray-900 px-3 py-1.5 rounded-lg text-sm font-semibold border border-blue-100 shadow-sm"
             >
               <Home className="w-4 h-4" />
               Home
@@ -111,12 +106,10 @@ export const BoothPage = () => {
           </div>
         </div>
       </div>
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left: Camera */}
           <div className="space-y-4">
-            <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-gray-700/50">
+            <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
               <Camera
                 onCapture={handleCapture}
                 countdown={countdown}
@@ -129,7 +122,7 @@ export const BoothPage = () => {
                 <button
                   onClick={startPhotoSession}
                   disabled={isCapturing}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-xl disabled:shadow-none hover:scale-105 disabled:cursor-not-allowed col-span-2"
+                  className="bg-gradient-to-r from-blue-100 to-blue-300 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md col-span-2 disabled:cursor-not-allowed"
                 >
                   <CameraIcon className="w-5 h-5" />
                   Start Session
@@ -138,7 +131,7 @@ export const BoothPage = () => {
                 <button
                   onClick={captureNext}
                   disabled={isCapturing}
-                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-xl disabled:shadow-none hover:scale-105 disabled:cursor-not-allowed col-span-2"
+                  className="bg-gradient-to-r from-blue-100 to-blue-300 disabled:from-gray-300 disabled:to-gray-400 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md col-span-2 disabled:cursor-not-allowed"
                 >
                   <CameraIcon className="w-5 h-5" />
                   {isCapturing
@@ -148,15 +141,14 @@ export const BoothPage = () => {
               ) : null}
               <button
                 onClick={resetSession}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:scale-105 col-span-2 md:col-span-1"
+                className="bg-gradient-to-r from-red-100 to-red-300 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md col-span-2 md:col-span-1"
               >
                 <RotateCcw className="w-5 h-5" />
                 Reset Session
               </button>
             </div>
           </div>
-          {/* Right: Preview */}
-          <div className="bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 shadow-2xl border border-gray-700/50">
+          <div className="bg-white rounded-2xl p-6 border border-blue-100 shadow-sm">
             <PhotoStrip
               photos={photos}
               filter={currentFilter}
@@ -174,7 +166,7 @@ export const BoothPage = () => {
                     },
                   })
                 }
-                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:scale-105 mt-4"
+                className="w-full bg-gradient-to-r from-blue-100 to-blue-300 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md mt-4"
               >
                 <ArrowRight className="w-5 h-5" />
                 Next to Customize

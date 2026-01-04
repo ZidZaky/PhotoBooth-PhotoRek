@@ -170,7 +170,7 @@ export const PhotoStrip = ({ photos, filter, layout, showDownload = true }: Phot
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-lg font-bold text-white">Preview</h3>
+          <h3 className="text-lg font-bold text-gray-400">Preview</h3>
         </div>
         <span className="text-sm text-gray-400">
           {photos.length}/{maxPhotos} photos
