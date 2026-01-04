@@ -19,7 +19,7 @@ export const BoothPage = () => {
   const [currentLayout] = useState<LayoutType>(initialLayout);
   const [isCapturing, setIsCapturing] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const [cameraStarted, setCameraStarted] = useState(true);
+  const [cameraStarted] = useState(true);
 
   const maxPhotos =
     currentLayout === "single"
