@@ -1,7 +1,5 @@
 import {
-  Sparkles,
   Camera,
-  Image,
   Wand2,
   ArrowRight,
   ArrowLeft,
