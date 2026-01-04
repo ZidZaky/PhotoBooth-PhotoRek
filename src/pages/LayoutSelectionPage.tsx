@@ -42,33 +42,30 @@ export const LayoutSelectionPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white flex items-center justify-center px-4">
       <div className="w-full max-w-4xl">
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-2 drop-shadow-lg">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
             Choose your layout
           </h1>
-          <p className="text-sm md:text-base text-gray-300">
+          <p className="text-sm md:text-base text-gray-500">
             Select a layout for your photo session.
           </p>
         </div>
 
-        {/* Layout Options - 2x2 Grid */}
         <div className="grid grid-cols-2 gap-6 mb-8 max-w-2xl mx-auto">
           {layouts.map((layout) => (
             <button
               key={layout.id}
               onClick={() => setSelectedLayout(layout.id)}
-              className={`group relative backdrop-blur-md bg-white/5 rounded-xl p-6 transition-all duration-300 ${
+              className={`relative bg-white rounded-xl p-6 border border-blue-100 shadow-sm ${
                 selectedLayout === layout.id
-                  ? 'ring-4 ring-cyan-400 scale-105 shadow-2xl shadow-cyan-500/20 bg-white/10'
-                  : 'hover:scale-105 hover:bg-white/10 shadow-xl'
+                  ? 'ring-2 ring-blue-400'
+                  : ''
               }`}
             >
-              {/* Preview Grid Container - Fixed aspect ratio */}
               <div className="mb-4 flex items-center justify-center">
-                <div className={`grid ${layout.grid} gap-1 backdrop-blur-sm bg-black/20 rounded-lg p-2 ${
+                <div className={`grid ${layout.grid} gap-1 bg-blue-50 rounded-lg p-2 ${
                   layout.id === 'vertical-4' ? 'w-20 h-28' :
                   layout.id === 'horizontal-2x2' ? 'w-24 h-24' :
                   layout.id === 'single' ? 'w-24 h-32' :
@@ -77,7 +74,7 @@ export const LayoutSelectionPage = () => {
                   {Array.from({ length: layout.id === 'single' ? 1 : layout.id === 'grid-2x3' ? 6 : 4 }).map((_, i) => (
                     <div
                       key={i}
-                      className="bg-gradient-to-br from-cyan-500 via-blue-500 to-indigo-600 rounded flex items-center justify-center text-white font-bold text-xs shadow-lg"
+                      className="bg-gradient-to-br from-blue-200 via-blue-300 to-blue-400 rounded flex items-center justify-center text-white font-bold text-xs"
                     >
                       {i + 1}
                     </div>
@@ -85,13 +82,11 @@ export const LayoutSelectionPage = () => {
                 </div>
               </div>
 
-              {/* Layout Info */}
-              <h3 className="text-lg font-black text-white mb-1">{layout.name}</h3>
-              <p className="text-sm text-gray-300 font-semibold">{layout.description}</p>
+              <h3 className="text-lg font-black text-gray-900 mb-1">{layout.name}</h3>
+              <p className="text-sm text-gray-500 font-semibold">{layout.description}</p>
               
-              {/* Selected Badge */}
               {selectedLayout === layout.id && (
-                <div className="absolute -top-2 -right-2 bg-gradient-to-br from-cyan-400 to-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg shadow-cyan-500/50 text-sm">
+                <div className="absolute -top-2 -right-2 bg-gradient-to-br from-blue-100 to-blue-300 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
                   ✓
                 </div>
               )}
@@ -99,11 +94,10 @@ export const LayoutSelectionPage = () => {
           ))}
         </div>
 
-        {/* Navigation Buttons */}
         <div className="flex gap-4 justify-center">
           <button
             onClick={() => navigate('/')}
-            className="backdrop-blur-md bg-white/10 text-white font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-xl hover:bg-white/20 transition-all duration-300 flex items-center gap-2 hover:scale-105"
+            className="bg-white text-gray-900 font-bold px-8 py-4 rounded-full border border-blue-100 shadow-sm flex items-center gap-2"
           >
             <ArrowLeft className="w-5 h-5" />
             Back
@@ -111,7 +105,7 @@ export const LayoutSelectionPage = () => {
           
           <button
             onClick={handleContinue}
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold px-12 py-4 rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-xl hover:from-cyan-400 hover:to-blue-500 transition-all duration-300 flex items-center gap-2 hover:scale-105"
+            className="bg-gradient-to-r from-blue-100 to-blue-300 text-white font-bold px-12 py-4 rounded-full shadow-md flex items-center gap-2"
           >
             Continue
             <ArrowRight className="w-5 h-5" />
