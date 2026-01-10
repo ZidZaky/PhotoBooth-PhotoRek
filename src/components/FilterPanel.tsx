@@ -27,10 +27,10 @@ export const FilterPanel = ({ currentFilter, onFilterChange }: FilterPanelProps)
           <button
             key={filter.value}
             onClick={() => onFilterChange(filter.value)}
-            className={`px-5 py-3 rounded-lg font-bold border-2 ${
+            className={`px-5 py-3 rounded-lg font-semibold border-2 ${
               currentFilter === filter.value
-                ? 'bg-gradient-to-r from-blue-100 to-blue-300 text-white border-blue-200'
-                : 'bg-blue-50 text-gray-600 border-blue-100'
+                ? 'bg-blue-500 text-white border-blue-600'
+                : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300'
             }`}
           >
             {filter.label}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Download, ArrowLeft, Palette } from "lucide-react";
 import type { Photo, FilterType, LayoutType, FrameColor } from "../types";
@@ -42,50 +42,81 @@ export const CustomizePage = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const frameThickness = 60;
-    let photoWidth: number, photoHeight: number, photosToRender: number;
+   
+    let CANVAS_WIDTH: number;
+    let CANVAS_HEIGHT: number;
+    let photoWidth: number;
+    let photoHeight: number;
+    let maxPhotos: number;
+    let cols: number;
+    let rows: number;
 
-    if (layout === "horizontal-2x2") {
-      photoWidth = (1200 - frameThickness * 3) / 2;
-      photoHeight = (1800 - frameThickness * 3) / 2;
-      photosToRender = Math.min(photos.length, 4);
-      canvas.width = 1200;
-      canvas.height = 1800;
-    } else if (layout === "vertical-4") {
-      photoWidth = 500;
-      photoHeight = 370;
-      photosToRender = Math.min(photos.length, 4);
-      canvas.width = photoWidth + frameThickness * 2;
-      canvas.height = photoHeight * 4 + frameThickness * 5;
+    const WATERMARK_HEIGHT = 60;
+    const FRAME_PADDING = 40;
+
+    if (layout === "vertical-4") {
+      
+      CANVAS_WIDTH = 600;
+      CANVAS_HEIGHT = 1800;
+      cols = 1;
+      rows = 4;
+      photoWidth = CANVAS_WIDTH - (FRAME_PADDING * 2);
+      photoHeight = (CANVAS_HEIGHT - WATERMARK_HEIGHT - (FRAME_PADDING * (rows + 1))) / rows;
+      maxPhotos = 4;
+    } else if (layout === "horizontal-2x2") {
+      
+      CANVAS_WIDTH = 1200;
+      CANVAS_HEIGHT = 1800;
+      cols = 2;
+      rows = 2;
+      photoWidth = (CANVAS_WIDTH - (FRAME_PADDING * (cols + 1))) / cols;
+      photoHeight = (CANVAS_HEIGHT - WATERMARK_HEIGHT - (FRAME_PADDING * (rows + 1))) / rows;
+      maxPhotos = 4;
     } else if (layout === "grid-2x3") {
-      photoWidth = (1200 - frameThickness * 4) / 3;
-      photoHeight = (1800 - frameThickness * 3) / 2;
-      photosToRender = Math.min(photos.length, 6);
-      canvas.width = 1200;
-      canvas.height = 1800;
+      
+      CANVAS_WIDTH = 1200;
+      CANVAS_HEIGHT = 1800;
+      cols = 2;
+      rows = 3;
+      photoWidth = (CANVAS_WIDTH - (FRAME_PADDING * (cols + 1))) / cols;
+      photoHeight = (CANVAS_HEIGHT - WATERMARK_HEIGHT - (FRAME_PADDING * (rows + 1))) / rows;
+      maxPhotos = 6;
     } else {
-      // Single photo
-      photoWidth = 600;
-      photoHeight = 800;
-      photosToRender = Math.min(photos.length, 1);
-      canvas.width = photoWidth + frameThickness * 2;
-      canvas.height = photoHeight + frameThickness * 2;
+      
+      CANVAS_WIDTH = 1200;
+      CANVAS_HEIGHT = 1800;
+      cols = 1;
+      rows = 1;
+      photoWidth = CANVAS_WIDTH - (FRAME_PADDING * 2);
+      photoHeight = CANVAS_HEIGHT - WATERMARK_HEIGHT - (FRAME_PADDING * 2);
+      maxPhotos = 1;
     }
+
+    // Set canvas to size
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
 
     const selectedFrameColor =
       frameColor === "custom"
         ? customColor
         : frameColors.find((f) => f.value === frameColor)?.color || "#ffffff";
 
+    // Background color
     ctx.fillStyle = selectedFrameColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const photoPromises = photos
-      .slice(0, photosToRender)
+      .slice(0, maxPhotos)
       .map((photo, index) => {
         return new Promise<void>((resolve) => {
           const img = new Image();
           img.onload = () => {
+            // Calculate position
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const x = FRAME_PADDING + col * (photoWidth + FRAME_PADDING);
+            const y = FRAME_PADDING + row * (photoHeight + FRAME_PADDING);
+
             const tempCanvas = document.createElement("canvas");
             tempCanvas.width = photoWidth;
             tempCanvas.height = photoHeight;
@@ -100,57 +131,40 @@ export const CustomizePage = () => {
             tempCtx.fillStyle = selectedFrameColor;
             tempCtx.fillRect(0, 0, photoWidth, photoHeight);
 
+            
             const imgAspect = img.width / img.height;
             const boxAspect = photoWidth / photoHeight;
 
             let drawWidth: number;
             let drawHeight: number;
-            let offsetX = 0;
-            let offsetY = 0;
+            let drawX: number;
+            let drawY: number;
 
             if (imgAspect > boxAspect) {
-              // Image lebih lebar - crop kiri kanan
+              // Image lebih lebar - scale berdasarkan height
               drawHeight = photoHeight;
-              drawWidth = photoHeight * imgAspect;
-              offsetX = (photoWidth - drawWidth) / 2; // Center crop
+              drawWidth = drawHeight * imgAspect;
+              drawX = (photoWidth - drawWidth) / 2;
+              drawY = 0;
             } else {
-              // Image lebih tinggi - crop atas bawah
+              // Image lebih tinggi - scale berdasarkan width
               drawWidth = photoWidth;
-              drawHeight = photoWidth / imgAspect;
-              offsetY = (photoHeight - drawHeight) / 2; // Center crop
+              drawHeight = drawWidth / imgAspect;
+              drawX = 0;
+              drawY = (photoHeight - drawHeight) / 2;
             }
 
-            // Draw image (will auto-crop excess)
-            tempCtx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+            // Draw scaled image (FIT mode - no crop, centered)
+            tempCtx.drawImage(
+              img,
+              drawX, drawY, drawWidth, drawHeight
+            );
 
-            // Apply filter jika ada
+            // Apply filter
             if (currentFilter !== "none") {
-              const imageData = tempCtx.getImageData(
-                0,
-                0,
-                photoWidth,
-                photoHeight
-              );
+              const imageData = tempCtx.getImageData(0, 0, photoWidth, photoHeight);
               const filtered = applyFilter(imageData, currentFilter);
               tempCtx.putImageData(filtered, 0, 0);
-            }
-
-            // Calculate position based on layout
-            let x = frameThickness;
-            let y = frameThickness;
-
-            if (layout === "grid-2x3") {
-              x = frameThickness + (index % 3) * (photoWidth + frameThickness);
-              y =
-                frameThickness +
-                Math.floor(index / 3) * (photoHeight + frameThickness);
-            } else if (layout === "horizontal-2x2") {
-              x = frameThickness + (index % 2) * (photoWidth + frameThickness);
-              y =
-                frameThickness +
-                Math.floor(index / 2) * (photoHeight + frameThickness);
-            } else if (layout === "vertical-4") {
-              y = frameThickness + index * (photoHeight + frameThickness);
             }
 
             // Draw to main canvas
@@ -169,16 +183,28 @@ export const CustomizePage = () => {
       });
 
     await Promise.all(photoPromises);
+
+    // ADD WATERMARK
+    const watermarkY = canvas.height - 30;
+    ctx.font = "bold 24px Arial, sans-serif";
+    ctx.fillStyle = "#666666";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("FotoRek!", canvas.width / 2, watermarkY);
   };
 
   const downloadPhotoStrip = () => {
     if (!canvasRef.current) return;
-
     const link = document.createElement("a");
     link.download = `fotorek-${Date.now()}.jpg`;
     link.href = canvasRef.current.toDataURL("image/jpeg", 0.95);
     link.click();
   };
+
+  // Get current canvas size for download button
+  const canvasSize = layout === "vertical-4" 
+    ? "600×1800px"
+    : "1200×1800px";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white py-8 px-4">
@@ -186,24 +212,24 @@ export const CustomizePage = () => {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-2">
-            Photo Strip Preview
+            Customize Your Photos
           </h1>
           <p className="text-gray-500">
             Layout:{" "}
             {layout === "horizontal-2x2"
-              ? "Layout B (4 photos)"
+              ? "2×2 Grid (1200×1800)"
               : layout === "vertical-4"
-              ? "Layout A (4 photos)"
+              ? "4 Vertical (600×1800)"
               : layout === "grid-2x3"
-              ? "Layout D (6 photos)"
-              : "Layout C (1 photo)"}{" "}
-            • Photos captured: {photos.length}
+              ? "2×3 Grid (1200×1800)"
+              : "Single (1200×1800)"}{" "}
+            • {photos.length} photos captured
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Canvas Preview */}
-          <div className="lg:col-span-2 bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl flex items-center justify-center shadow-sm">
+          <div className="lg:col-span-2 bg-gradient-to-br from-gray-50 to-blue-50 p-8 rounded-2xl flex items-center justify-center shadow-sm border border-gray-200">
             <div className="bg-white p-4 rounded-xl shadow-lg inline-block">
               <canvas
                 ref={canvasRef}
@@ -233,16 +259,15 @@ export const CustomizePage = () => {
                 <Palette className="w-5 h-5 text-blue-500" />
                 <h3 className="text-lg font-bold text-gray-900">Frame Color</h3>
               </div>
-
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {frameColors.map((frame) => (
                   <button
                     key={frame.value}
                     onClick={() => setFrameColor(frame.value)}
-                    className={`px-4 py-3 rounded-lg font-semibold transition-all duration-300 border-2 ${
+                    className={`px-4 py-3 rounded-lg font-semibold border-2 ${
                       frameColor === frame.value
-                        ? "bg-gradient-to-r from-blue-100 to-blue-300 text-white border-blue-400"
-                        : "bg-blue-50 text-gray-600 border-blue-100 hover:border-blue-200"
+                        ? "bg-blue-500 text-white border-blue-600"
+                        : "bg-gray-50 text-gray-700 border-gray-200 hover:border-blue-300"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -255,8 +280,7 @@ export const CustomizePage = () => {
                   </button>
                 ))}
               </div>
-              {/* Custom Color Picker */}
-              <div className="mt-4 pt-4 border-t border-blue-100">
+              <div className="mt-4 pt-4 border-t border-gray-200">
                 <label className="flex items-center gap-3 text-sm text-gray-600 font-semibold">
                   <span>Custom Color:</span>
                   <input
@@ -266,23 +290,24 @@ export const CustomizePage = () => {
                       setCustomColor(e.target.value);
                       setFrameColor("custom");
                     }}
-                    className="w-16 h-10 rounded-lg cursor-pointer bg-blue-50 border-2 border-blue-200 shadow-sm"
+                    className="w-16 h-10 rounded-lg cursor-pointer border-2 border-gray-300"
                   />
                 </label>
               </div>
             </div>
+
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
                 onClick={downloadPhotoStrip}
-                className="w-full bg-gradient-to-r from-blue-100 to-blue-300 hover:from-blue-200 hover:to-blue-400 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 shadow-md"
               >
                 <Download className="w-5 h-5" />
-                Download Photo Strip
+                Download ({canvasSize})
               </button>
               <button
                 onClick={() => navigate("/booth", { state: { layout } })}
-                className="w-full bg-white hover:bg-blue-50 text-gray-900 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-all border-2 border-blue-200 shadow-sm"
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 border-2 border-gray-200"
               >
                 <ArrowLeft className="w-5 h-5" />
                 Take New Photos
