@@ -54,17 +54,8 @@ export const useCamera = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    // ✅ FIX MIRROR: Flip horizontal untuk undo selfie mirror effect
-    ctx.save();
-    ctx.scale(-1, 1); // Flip horizontal
-    ctx.drawImage(
-      videoRef.current, 
-      -canvas.width, // Start dari kanan
-      0, 
-      canvas.width, 
-      canvas.height
-    );
-    ctx.restore();
+    ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
 
     return canvas.toDataURL('image/jpeg', 0.95);
   }, []);
